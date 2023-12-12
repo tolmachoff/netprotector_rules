@@ -1,7 +1,8 @@
 import flet as ft
 
 from controller import Controller
-import rule_parser
+from rule_text import RuleText
+from rules_data_table import RulesDataTable
 
 
 def main(page: ft.Page):
@@ -9,76 +10,45 @@ def main(page: ft.Page):
     page.window_maximized = True
 
     controller = Controller()
-
-    rules_data_table = ft.DataTable(
-        columns=[
-            ft.DataColumn(ft.Text("Message")),
-            ft.DataColumn(ft.Text("Protocol")),
-        ],
-    )
-
-    rule_text = ft.Column(
-        [
-            ft.Text("Rule text:"),
-            ft.TextField(
-                read_only=True,
-                multiline=True,
-            )
-        ]
-    )
-
-    def create_rule_clicked_callback(n):
-        def clbk(_):
-            if controller.select(n):
-                # First click - print rule text
-                rule_text.controls[1].value = controller.get_rule(n)
-                rule_text.update()
-            else:
-                # Not first click - toggle rule select
-                rules_data_table.rows[n].selected = controller.get_is_selected(n)
-                rules_data_table.update()
-
-        return clbk
-
-    def update_rules_data_table():
-        rules_data_table.rows.clear()
-        for cnt, rule in enumerate(controller.get_rules()):
-            msg = rule_parser.get_message(rule)
-            protocol = rule_parser.get_protocol(rule)
-            rules_data_table.rows.append(
-                ft.DataRow(
-                    [
-                        ft.DataCell(ft.Text(msg)),
-                        ft.DataCell(ft.Text(protocol)),
-                    ],
-                    on_select_changed=create_rule_clicked_callback(cnt),
-                )
-            )
-        rules_data_table.update()
+    rule_text = RuleText()
+    rules_data_table = RulesDataTable(controller, rule_text)
 
     def open_file_result(e: ft.FilePickerResultEvent):
         if e.files:
             controller.load_rules(e.files[0].path)
-            update_rules_data_table()
+            rules_data_table.update()
 
     open_file_dialog = ft.FilePicker(on_result=open_file_result)
-    page.overlay.append(open_file_dialog)
-
-    def do_open(_):
-        open_file_dialog.pick_files(dialog_title="Open rules file")
 
     def save_file_result(e: ft.FilePickerResultEvent):
         if e.path:
             controller.export_rules(e.path)
 
     save_file_dialog = ft.FilePicker(on_result=save_file_result)
-    page.overlay.append(save_file_dialog)
+    
+    page.overlay.extend(
+        [
+            open_file_dialog,
+            save_file_dialog
+        ]
+    )
 
-    def do_export(_):
+    def do_open(e):
+        open_file_dialog.pick_files(dialog_title="Open rules file")
+
+    def do_export(e):
         save_file_dialog.save_file(
             dialog_title="Save encripted rules file",
             file_name="result.base64"
         )
+
+    def do_select_all(e):
+        controller.toggle_select_filtered()
+        rules_data_table.update()
+
+    def do_apply_filter(e):
+        controller.apply_filter(e.control.value)
+        rules_data_table.update()
 
     page.add(
         ft.Row(
@@ -92,7 +62,7 @@ def main(page: ft.Page):
             [
                 ft.Column(
                     [
-                        rules_data_table,
+                        rules_data_table.view,
                     ],
                     expand=True,
                     scroll=ft.ScrollMode.AUTO,
@@ -100,7 +70,7 @@ def main(page: ft.Page):
 
                 ft.Column(
                     [
-                        rule_text,
+                        rule_text.view,
                     ],
                     expand=True,
                 )
@@ -111,8 +81,8 @@ def main(page: ft.Page):
 
         ft.Row(
             [
-                ft.ElevatedButton("Select all"),
-                ft.TextField(label="Filter"),
+                ft.ElevatedButton("Select all", on_click=do_select_all),
+                ft.TextField(label="Filter", on_submit=do_apply_filter),
             ]
         ),
 
