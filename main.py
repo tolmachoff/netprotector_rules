@@ -58,15 +58,31 @@ def main(page: ft.Page):
             ],
         ),
 
+        ft.Divider(),
+
         ft.Row(
             [
                 ft.Column(
                     [
-                        rules_data_table.view,
+                        ft.Column(
+                            [
+                                rules_data_table.view,
+                            ],
+                            expand=True,
+                            scroll=ft.ScrollMode.AUTO,
+                        ),
+
+                        ft.Row(
+                            [
+                                ft.ElevatedButton("Select all", on_click=do_select_all),
+                                ft.TextField(label="Filter", on_submit=do_apply_filter),
+                            ]
+                        ),
                     ],
                     expand=True,
-                    scroll=ft.ScrollMode.AUTO,
                 ),
+
+                ft.VerticalDivider(),
 
                 ft.Column(
                     [
@@ -77,13 +93,6 @@ def main(page: ft.Page):
             ],
             expand=True,
             vertical_alignment=ft.CrossAxisAlignment.START,
-        ),
-
-        ft.Row(
-            [
-                ft.ElevatedButton("Select all", on_click=do_select_all),
-                ft.TextField(label="Filter", on_submit=do_apply_filter),
-            ]
         ),
 
     )
