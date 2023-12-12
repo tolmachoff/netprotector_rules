@@ -13,14 +13,14 @@ def main(page: ft.Page):
     rule_text = RuleText()
     rules_data_table = RulesDataTable(controller, rule_text)
 
-    def open_file_result(e: ft.FilePickerResultEvent):
+    def open_file_result(e):
         if e.files:
             controller.load_rules(e.files[0].path)
             rules_data_table.update()
 
     open_file_dialog = ft.FilePicker(on_result=open_file_result)
 
-    def save_file_result(e: ft.FilePickerResultEvent):
+    def save_file_result(e):
         if e.path:
             controller.export_rules(e.path)
 
